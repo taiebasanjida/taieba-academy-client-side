@@ -6,12 +6,13 @@ import { Helmet } from 'react-helmet-async'
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
 export default function AddCourse() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('edit')
   const isEditMode = !!editId
@@ -63,6 +64,7 @@ export default function AddCourse() {
           }
         })
         toast.success('Course updated successfully! 🎉')
+        queryClient.invalidateQueries({ queryKey: ['my-courses'] })
         navigate('/dashboard/my-courses')
       } else {
         // Create new course
@@ -75,7 +77,8 @@ export default function AddCourse() {
           }
         })
         toast.success('Course added successfully! 🎉')
-        reset()
+        queryClient.invalidateQueries({ queryKey: ['my-courses'] })
+        navigate('/dashboard/my-courses')
       }
     } catch (e) {
       toast.error(e?.response?.data?.message || e?.message || `Failed to ${isEditMode ? 'update' : 'add'} course`)

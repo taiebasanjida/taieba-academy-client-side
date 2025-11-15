@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
@@ -12,6 +12,7 @@ export default function CourseDetails() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['course', id],
     queryFn: async () => {
@@ -29,6 +30,7 @@ export default function CourseDetails() {
     },
     onSuccess: () => {
       toast.success('Enrolled successfully! 🎉')
+      queryClient.invalidateQueries({ queryKey: ['enrollment-status', id, user?.uid] })
     },
     onError: (error) => {
       if (error.message === 'AUTH_REQUIRED') {
@@ -46,6 +48,16 @@ export default function CourseDetails() {
         navigate('/login', { state: { from: location } })
       }
     }
+  })
+
+  const { data: enrollmentStatus } = useQuery({
+    queryKey: ['enrollment-status', id, user?.uid],
+    queryFn: async () => {
+      const res = await api.get(`/enrollments/status/${id}`)
+      return res.data
+    },
+    enabled: !!user && !!id,
+    staleTime: 2 * 60 * 1000,
   })
 
   if (isLoading) {
@@ -173,10 +185,12 @@ export default function CourseDetails() {
 
               <button
                 onClick={() => enrollMutation.mutate()}
-                disabled={enrollMutation.isPending}
+                disabled={enrollMutation.isPending || enrollmentStatus?.enrolled}
                 className="btn btn-primary w-full py-4 text-lg font-semibold"
               >
-                {enrollMutation.isPending ? (
+                {enrollmentStatus?.enrolled ? (
+                  'Already Enrolled'
+                ) : enrollMutation.isPending ? (
                   <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

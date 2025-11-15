@@ -1,19 +1,27 @@
 import { Helmet } from 'react-helmet-async'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../state/AuthContext'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function Register() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
-  const { registerWithEmail, loginWithGoogle } = useAuth()
+  const { registerWithEmail, loginWithGoogle, user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const password = watch('password')
   const passwordValid = /[A-Z]/.test(password || '') && /[a-z]/.test(password || '') && (password || '').length >= 6
+
+  useEffect(() => {
+    if (user) {
+      const redirectTo = location.state?.from || '/'
+      navigate(redirectTo, { replace: true })
+    }
+  }, [user, navigate, location.state])
 
   const onSubmit = async (data) => {
     if (!passwordValid) {

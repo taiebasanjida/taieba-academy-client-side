@@ -60,6 +60,13 @@
     @apply focus:ring-primary-500;
   }
 
+  .btn-danger {
+    @apply bg-red-600 text-white;
+    @apply hover:bg-red-700 active:bg-red-800;
+    @apply focus:ring-red-500;
+    @apply shadow-sm;
+  }
+
   .card {
     @apply bg-white dark:bg-gray-900;
     @apply rounded-xl shadow-soft;
