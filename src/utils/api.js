@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
-  timeout: 10000,
+  timeout: 8000, // 8 seconds - enough time for backend to return 503 (3s) + retry buffer
   headers: {
     'Content-Type': 'application/json',
   },
@@ -102,9 +102,19 @@ api.interceptors.response.use(
         toast.error(data.message)
       }
     } else if (error.request) {
-      // Request was made but no response received
-      toast.dismiss('db-retry')
-      toast.error('Network error. Please check your connection.')
+      // Request was made but no response received (timeout or network error)
+      // Check if it's a timeout and might be a database connection issue
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        // This might be a database connection timeout - show helpful message
+        toast.dismiss('db-retry')
+        toast.error(
+          'Request timeout. Database might be connecting. Please try again in a moment.',
+          { duration: 5000 }
+        )
+      } else {
+        toast.dismiss('db-retry')
+        toast.error('Network error. Please check your connection.')
+      }
     } else {
       // Something else happened
       toast.dismiss('db-retry')
