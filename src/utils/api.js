@@ -2,8 +2,12 @@ import axios from 'axios'
 import { auth } from './firebase'
 import toast from 'react-hot-toast'
 
+// Log API base URL for debugging
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+console.log('🔗 API Base URL:', apiBaseURL)
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: apiBaseURL,
   timeout: 8000, // 8 seconds - enough time for backend to return 503 (3s) + retry buffer
   headers: {
     'Content-Type': 'application/json',
@@ -103,6 +107,17 @@ api.interceptors.response.use(
       }
     } else if (error.request) {
       // Request was made but no response received (timeout or network error)
+      console.error('❌ Network Error Details:', {
+        message: error.message,
+        code: error.code,
+        config: {
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          method: error.config?.method,
+          timeout: error.config?.timeout,
+        },
+      })
+      
       // Check if it's a timeout and might be a database connection issue
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         // This might be a database connection timeout - show helpful message
@@ -114,6 +129,7 @@ api.interceptors.response.use(
       } else {
         toast.dismiss('db-retry')
         toast.error('Network error. Please check your connection.')
+        console.error('🔍 Full error:', error)
       }
     } else {
       // Something else happened
