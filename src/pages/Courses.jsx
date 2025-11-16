@@ -16,7 +16,19 @@ export default function Courses() {
     queryFn: async () => {
       const res = await api.get('/courses', { params: { category, search } })
       return res.data.courses
-    }
+    },
+    retry: (failureCount, error) => {
+      // Retry for 503 errors (database connection issues)
+      if (error?.response?.status === 503) {
+        return failureCount < 2 // Retry 2 more times (total 3 attempts)
+      }
+      // Don't retry for other errors
+      return false
+    },
+    retryDelay: (attemptIndex) => {
+      // Wait 3 seconds between retries (matches backend retryAfter)
+      return 3000
+    },
   })
 
   const categories = [
