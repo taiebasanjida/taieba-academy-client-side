@@ -31,10 +31,50 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor for error handling
+// Response interceptor for error handling with retry
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response) => {
+    // Dismiss loading toast on success
+    toast.dismiss('db-retry')
+    return response
+  },
+  async (error) => {
+    // Handle 503 errors with retry
+    if (error.response?.status === 503 && error.response?.data?.retryAfter) {
+      const config = error.config
+      
+      // Check if we've already retried this request
+      if (!config.__retryCount) {
+        config.__retryCount = 0
+      }
+      
+      // Max 3 retries
+      if (config.__retryCount < 3) {
+        config.__retryCount++
+        const retryAfter = error.response.data.retryAfter || 3
+        
+        // Show loading message
+        toast.loading(
+          `Database connecting... Retrying (${config.__retryCount}/3)`,
+          {
+            id: 'db-retry',
+          }
+        )
+        
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000))
+        
+        // Retry the request
+        try {
+          return await api(config)
+        } catch (retryError) {
+          // If retry also fails, continue to normal error handling
+          error = retryError
+        }
+      }
+    }
+    
+    // Normal error handling
     if (error.response) {
       // Server responded with error status
       const { status, data } = error.response
@@ -46,16 +86,28 @@ api.interceptors.response.use(
         toast.error('You do not have permission to perform this action.')
       } else if (status === 404) {
         toast.error('Resource not found.')
+      } else if (status === 503) {
+        // 503 after all retries failed
+        toast.dismiss('db-retry')
+        toast.error(
+          data?.message ||
+            'Database connection failed. Please refresh the page and try again.',
+          { duration: 5000 }
+        )
       } else if (status >= 500) {
+        toast.dismiss('db-retry')
         toast.error('Server error. Please try again later.')
       } else if (data?.message) {
+        toast.dismiss('db-retry')
         toast.error(data.message)
       }
     } else if (error.request) {
       // Request was made but no response received
+      toast.dismiss('db-retry')
       toast.error('Network error. Please check your connection.')
     } else {
       // Something else happened
+      toast.dismiss('db-retry')
       toast.error('An unexpected error occurred.')
     }
     
