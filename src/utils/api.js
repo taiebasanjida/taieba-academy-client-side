@@ -3,12 +3,12 @@ import { auth } from './firebase'
 import toast from 'react-hot-toast'
 
 // Log API base URL for debugging
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://taieba-academy-server.vercel.app/api'
 console.log('🔗 API Base URL:', apiBaseURL)
 
 const api = axios.create({
   baseURL: apiBaseURL,
-  timeout: 8000, // 8 seconds - enough time for backend to return 503 (3s) + retry buffer
+  timeout: 30000, // 30 seconds - for Vercel serverless cold starts and MongoDB connection
   headers: {
     'Content-Type': 'application/json',
   },

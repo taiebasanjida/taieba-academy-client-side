@@ -13,11 +13,13 @@ export default function Header() {
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-3"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-accent-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">T</span>
-              </div>
+              <img
+                src="/page-loader/taieba-academy-logo.webp"
+                alt="Taieba Academy"
+                className="h-8 w-auto md:h-10 object-contain"
+              />
               <span className="font-display font-bold text-xl bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
                 Taieba Academy
               </span>

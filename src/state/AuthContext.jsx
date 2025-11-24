@@ -6,7 +6,9 @@ import {
   createUserWithEmailAndPassword, 
   updateProfile, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  getAuth
 } from 'firebase/auth'
 import { auth } from '../utils/firebase'
 import toast from 'react-hot-toast'
@@ -59,6 +61,25 @@ export function AuthProvider({ children }) {
       return result.user
     } catch (error) {
       console.error('Registration error:', error)
+      
+      // Handle specific Firebase auth errors
+      if (error.code === 'auth/email-already-in-use') {
+        // Email already registered, suggest login or Google sign in
+        const customError = new Error(
+          'This email is already registered. Please login instead, or use Google sign in if you registered with Google.'
+        )
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/weak-password') {
+        const customError = new Error('Password is too weak. Please use a stronger password.')
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/invalid-email') {
+        const customError = new Error('Invalid email address. Please check your email.')
+        customError.code = error.code
+        throw customError
+      }
+      
       throw error
     }
   }
@@ -73,6 +94,29 @@ export function AuthProvider({ children }) {
       return result.user
     } catch (error) {
       console.error('Google login error:', error)
+      
+      // Handle specific Firebase auth errors
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        // Account exists with email/password, suggest login first
+        const customError = new Error(
+          'This email is already registered with email/password. Please login with your password first, then you can connect your Google account.'
+        )
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/email-already-in-use') {
+        // Email already in use
+        const customError = new Error(
+          'This email is already registered. Please login instead.'
+        )
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        // User closed popup
+        const customError = new Error('Sign in was cancelled. Please try again.')
+        customError.code = error.code
+        throw customError
+      }
+      
       throw error
     }
   }
@@ -89,6 +133,42 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const resetPassword = async (email) => {
+    try {
+      // Get the action code settings to redirect to custom page
+      const actionCodeSettings = {
+        // URL you want to redirect back to after password reset
+        // Use your deployed domain URL (Netlify URL)
+        url: `${window.location.origin}/reset-password`,
+        // This must be true to allow email action links to work in the localhost
+        handleCodeInApp: true,
+      }
+
+      await sendPasswordResetEmail(auth, email, actionCodeSettings)
+      toast.success('Password reset email sent! Check your inbox.')
+      return true
+    } catch (error) {
+      console.error('Password reset error:', error)
+      
+      // Handle specific Firebase auth errors
+      if (error.code === 'auth/user-not-found') {
+        const customError = new Error('No account found with this email address.')
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/invalid-email') {
+        const customError = new Error('Invalid email address.')
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/too-many-requests') {
+        const customError = new Error('Too many requests. Please try again later.')
+        customError.code = error.code
+        throw customError
+      }
+      
+      throw error
+    }
+  }
+
   const value = {
     user,
     loading,
@@ -96,6 +176,7 @@ export function AuthProvider({ children }) {
     registerWithEmail,
     loginWithGoogle,
     logout,
+    resetPassword,
     isAuthenticated: !!user,
   }
 

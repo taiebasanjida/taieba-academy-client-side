@@ -49,10 +49,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-accent-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">T</span>
-              </div>
+            <Link to="/" className="flex items-center space-x-3 mb-4">
+              <img
+                src="/page-loader/taieba-academy-logo.webp"
+                alt="Taieba Academy"
+                className="h-10 w-auto object-contain"
+              />
               <span className="font-display font-bold text-xl bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
                 Taieba Academy
               </span>

@@ -33,10 +33,9 @@ export default function Courses() {
 
   const categories = [
     { value: '', label: 'All Categories' },
-    { value: 'development', label: 'Development' },
-    { value: 'design', label: 'Design' },
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'data', label: 'Data Science' },
+    { value: 'web-development', label: 'Web Development' },
+    { value: 'ai-data-science', label: 'AI & Data Science' },
+    { value: 'programming-software', label: 'Programming & Software' },
   ]
 
   return (
