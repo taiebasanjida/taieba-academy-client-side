@@ -8,7 +8,8 @@ import {
   signOut, 
   onAuthStateChanged,
   sendPasswordResetEmail,
-  getAuth
+  getAuth,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth'
 import { auth } from '../utils/firebase'
 import toast from 'react-hot-toast'
@@ -41,6 +42,52 @@ export function AuthProvider({ children }) {
       return result.user
     } catch (error) {
       console.error('Login error:', error)
+      
+      // Handle specific Firebase auth errors with user-friendly messages
+      if (error.code === 'auth/user-not-found') {
+        const customError = new Error('No account found with this email. Please register first.')
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/invalid-credential') {
+        // Firebase uses invalid-credential for both wrong password and non-existent email
+        // Check if email exists to provide specific error message
+        try {
+          const signInMethods = await fetchSignInMethodsForEmail(auth, email)
+          if (signInMethods.length === 0) {
+            // Email doesn't exist
+            const customError = new Error('No account found with this email. Please register first.')
+            customError.code = 'auth/user-not-found'
+            throw customError
+          } else {
+            // Email exists but password is wrong
+            const customError = new Error('Incorrect password. Please try again or reset your password.')
+            customError.code = error.code
+            throw customError
+          }
+        } catch (checkError) {
+          // If fetchSignInMethodsForEmail fails, assume wrong password
+          const customError = new Error('Incorrect password. Please try again or reset your password.')
+          customError.code = error.code
+          throw customError
+        }
+      } else if (error.code === 'auth/wrong-password') {
+        const customError = new Error('Incorrect password. Please try again or reset your password.')
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/invalid-email') {
+        const customError = new Error('Invalid email address. Please check your email format.')
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/too-many-requests') {
+        const customError = new Error('Too many failed attempts. Please try again later or reset your password.')
+        customError.code = error.code
+        throw customError
+      } else if (error.code === 'auth/user-disabled') {
+        const customError = new Error('This account has been disabled. Please contact support.')
+        customError.code = error.code
+        throw customError
+      }
+      
       throw error
     }
   }

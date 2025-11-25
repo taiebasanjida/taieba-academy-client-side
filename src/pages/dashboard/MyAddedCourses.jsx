@@ -5,11 +5,11 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
 import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
 export default function MyAddedCourses() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const queryClient = useQueryClient()
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [imageErrors, setImageErrors] = useState({})
@@ -20,13 +20,27 @@ export default function MyAddedCourses() {
       [courseId]: true
     }))
   }
+
+  // Clear cache when user changes
+  useEffect(() => {
+    if (user?.email) {
+      // Invalidate all queries to ensure fresh data for new user
+      queryClient.invalidateQueries({ queryKey: ['my-courses'] })
+    } else {
+      // Clear cache when user logs out
+      queryClient.removeQueries({ queryKey: ['my-courses'] })
+    }
+  }, [user?.email, queryClient])
   
   const { data, isLoading } = useQuery({
-    queryKey: ['my-courses'],
+    queryKey: ['my-courses', user?.email],
     queryFn: async () => {
       const res = await api.get('/courses/mine')
       return res.data
-    }
+    },
+    enabled: !!user?.email,
+    staleTime: 0, // Always consider data stale to force refetch
+    cacheTime: 0 // Don't cache when query is disabled
   })
 
   const del = useMutation({
@@ -43,7 +57,7 @@ export default function MyAddedCourses() {
     }
   })
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="card p-8">
         <LoadingSpinner message="Loading your courses..." />

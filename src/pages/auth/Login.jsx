@@ -26,7 +26,22 @@ export default function Login() {
       navigate(from, { replace: true })
       toast.success('Welcome back! 🎉')
     } catch (e) {
-      toast.error(e?.message || 'Login failed. Please check your credentials.')
+      // Show user-friendly error message with prominent toast
+      const errorMessage = e?.message || 'Login failed. Please check your credentials and try again.'
+      toast.error(errorMessage, {
+        duration: 6000,
+        position: 'top-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          fontSize: '16px',
+          padding: '16px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        },
+        icon: '❌',
+      })
+      console.error('Login error details:', e)
     }
   }
 
